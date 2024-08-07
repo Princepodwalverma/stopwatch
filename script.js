@@ -1,52 +1,79 @@
-let timer = null;
-let startTime = 0;
+let startTime;
 let elapsedTime = 0;
-let laps = [];
+let timerInterval;
+let isRunning = false;
 
-document.getElementById('play-btn').addEventListener('click', play);
-document.getElementById('reset-btn').addEventListener('click', reset);
-document.getElementById('lap-btn').addEventListener('click', lap);
+const display = document.getElementById('display');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const lapBtn = document.getElementById('lapBtn');
+const laps = document.getElementById('laps');
 
-function play() {
-  if (timer === null) {
-    startTime = new Date().getTime() - elapsedTime;
-    timer = setInterval(updateTime, 1000);
-  }
+function timeToString(time) {
+    let diffInHrs = time / 3600000;
+    let hh = Math.floor(diffInHrs);
+
+    let diffInMin = (diffInHrs - hh) * 60;
+    let mm = Math.floor(diffInMin);
+
+    let diffInSec = (diffInMin - mm) * 60;
+    let ss = Math.floor(diffInSec);
+
+    let diffInMs = (diffInSec - ss) * 100;
+    let ms = Math.floor(diffInMs);
+
+    let formattedMM = mm.toString().padStart(2, '0');
+    let formattedSS = ss.toString().padStart(2, '0');
+    let formattedMS = ms.toString().padStart(2, '0');
+
+    return `${formattedMM}:${formattedSS}:${formattedMS}`;
 }
 
-function reset() {
-  clearInterval(timer);
-  timer = null;
-  elapsedTime = 0;
-  laps = [];
-  document.getElementById('display').innerHTML = '00:00:00';
-  document.getElementById('laps').innerHTML = '';
+function startStopwatch() {
+    startTime = Date.now() - elapsedTime;
+    timerInterval = setInterval(function () {
+        elapsedTime = Date.now() - startTime;
+        display.innerHTML = timeToString(elapsedTime);
+    }, 10);
+    playPauseBtn.innerHTML = 'Pause';
 }
 
-function lap() {
-  const currentTime = new Date().getTime() - startTime;
-  const lapTime = currentTime - elapsedTime;
-  laps.push(lapTime);
-  elapsedTime = currentTime;
-  const lapHTML = `
-    <li>Lap ${laps.length}: ${formatTime(lapTime)}</li>
-    `;
-  document.getElementById('laps').insertAdjacentHTML('beforeend', lapHTML);
+function stopStopwatch() {
+    clearInterval(timerInterval);
+    playPauseBtn.innerHTML = 'Play';
 }
 
-function updateTime() {
-  const currentTime = new Date().getTime() - startTime;
-  document.getElementById('display').innerHTML = formatTime(currentTime);
-  elapsedTime = currentTime;
+function resetStopwatch() {
+    clearInterval(timerInterval);
+    display.innerHTML = '00:00:00';
+    elapsedTime = 0;
+    playPauseBtn.innerHTML = 'Play';
+    laps.innerHTML = '';
 }
 
-function formatTime(time) {
-  const hours = Math.floor(time / 3600000);
-  const minutes = Math.floor((time % 3600000) / 60000);
-  const seconds = Math.floor((time % 60000) / 1000);
-  return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
+function lapStopwatch() {
+    let lapTime = timeToString(elapsedTime);
+    let lapItem = document.createElement('li');
+    lapItem.innerHTML = lapTime;
+    laps.appendChild(lapItem);
 }
 
-function padZero(num) {
-  return (num < 10 ? '0' : '') + num;
-}
+playPauseBtn.addEventListener('click', function () {
+    if (isRunning) {
+        stopStopwatch();
+    } else {
+        startStopwatch();
+    }
+    isRunning = !isRunning;
+});
+
+resetBtn.addEventListener('click', function () {
+    resetStopwatch();
+    isRunning = false;
+});
+
+lapBtn.addEventListener('click', function () {
+    if (isRunning) {
+        lapStopwatch();
+    }
+});
